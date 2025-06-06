@@ -21,7 +21,7 @@ A modern, responsive calculator built with HTML, CSS, and JavaScript. This calcu
 1. Clone this repository:
 
 ```bash
-git clone https://github.com/yourusername/calculator.git
+git clone https://github.com/ReMoOuZz/calculator.git
 ```
 
 2. Navigate to the project directory:
