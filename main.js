@@ -124,12 +124,10 @@ function calculate() {
       return;
   }
 
-  const resultStr = result.toString();
-  displayValue = resultStr.length === 13 ? result.toExponential(2) : resultStr;
-  displayValue = Number.isInteger(result) ? result : result.toFixed(3);
+  displayValue = formatResult(result);
   updateScreen();
 
-  firstNumber = result.toString();
+  firstNumber = displayValue;
   secondNumber = "";
   operator = "";
   isFirstNumber = true;
@@ -174,19 +172,20 @@ operatorButtons.forEach((button) => {
 
     if (justCalculated) {
       justCalculated = false;
+      firstNumber = displayValue;
+      secondNumber = "";
+      operator = "";
     }
 
-    if (symbol !== "-" || (symbol === "-" && firstNumber !== "" && firstNumber !== "-")) {
-      operator = symbol;
-      isFirstNumber = false;
-      numberButtons.forEach((btn) => (btn.disabled = false));
-      operatorButtons.forEach((btn) => {
-        btn.disabled = btn.textContent !== "-";
-        btn.classList.remove("active");
-      });
-      button.classList.add("active");
-      return;
-    }
+    operator = symbol;
+    isFirstNumber = false;
+    numberButtons.forEach((btn) => (btn.disabled = false));
+    operatorButtons.forEach((btn) => {
+      btn.disabled = btn.textContent !== "-";
+      btn.classList.remove("active");
+    });
+    button.classList.add("active");
+    updateScreen();
   });
 });
 
@@ -269,5 +268,146 @@ resultButton.addEventListener("click", () => {
       setErrorClass(true);
       cleanAfterCalculate();
     }
+  }
+});
+
+document.addEventListener("keydown", (e) => {
+  const key = e.key;
+
+  if (screen.textContent === "0") {
+    screen.textContent = "";
+  }
+
+  if (screen.classList.contains("screen-error")) {
+    setErrorClass(false);
+    reset();
+  }
+
+  if (justCalculated) {
+    secondNumber = "";
+    operator = "";
+    isFirstNumber = true;
+    displayValue = firstNumber;
+    updateScreen();
+    justCalculated = false;
+  }
+
+  if (/^[0-9]$/.test(e.key)) {
+    if (justCalculated) {
+      firstNumber = displayValue;
+      secondNumber = "";
+      operator = "";
+      isFirstNumber = true;
+      justCalculated = false;
+    }
+
+    if (isFirstNumber) {
+      if (firstNumber === "-") {
+        firstNumber = "-" + e.key;
+      } else if (firstNumber === "0") {
+        firstNumber = e.key;
+      } else {
+        firstNumber += e.key;
+      }
+      displayValue = firstNumber;
+    } else {
+      if (secondNumber === "-") {
+        secondNumber = "-" + e.key;
+      } else if (secondNumber === "0") {
+        secondNumber = e.key;
+      } else {
+        secondNumber += e.key;
+      }
+      displayValue = secondNumber;
+    }
+
+    if (isFirstNumber && firstNumber.length >= 13) {
+      numberButtons.forEach((btn) => (btn.disabled = true));
+      return;
+    }
+    if (!isFirstNumber && secondNumber.length >= 13) {
+      numberButtons.forEach((btn) => (btn.disabled = true));
+      return;
+    }
+
+    updateScreen();
+  }
+
+  if (/^[+\-*/]$/.test(e.key)) {
+    const symbol = e.key;
+
+    if (justCalculated) {
+      justCalculated = false;
+      firstNumber = displayValue;
+      secondNumber = "";
+      operator = "";
+      isFirstNumber = false;
+    }
+
+    if (!isFirstNumber && secondNumber !== "") {
+      calculate();
+    }
+
+    if (!operator && symbol === "-" && (firstNumber === "" || firstNumber === "0")) {
+      firstNumber = "-";
+      displayValue = firstNumber;
+      updateScreen();
+      return;
+    }
+
+    if (operator && symbol === "-" && (secondNumber === "" || secondNumber === "0")) {
+      secondNumber = "-";
+      displayValue = secondNumber;
+      updateScreen();
+      return;
+    }
+
+    operator = symbol;
+    isFirstNumber = false;
+    numberButtons.forEach((btn) => (btn.disabled = false));
+    operatorButtons.forEach((btn) => {
+      btn.disabled = btn.textContent !== "-";
+      btn.classList.remove("active");
+    });
+    const activeButton = Array.from(operatorButtons).find((btn) => btn.textContent === symbol);
+    if (activeButton) {
+      activeButton.classList.add("active");
+    }
+
+    updateScreen();
+  }
+
+  if (e.key === "ù") {
+    percentage = "%";
+  }
+
+  if (e.key === "=" || e.key === "Enter") {
+    if (percentage === "%") {
+      if (firstNumber && operator && secondNumber) {
+        getPercentage();
+      } else {
+        screen.textContent = "Invalid operation";
+        setErrorClass(true);
+        cleanAfterCalculate();
+      }
+    } else {
+      if (!isFirstNumber && secondNumber !== "") {
+        calculate();
+        justCalculated = true;
+      } else if (!isFirstNumber && operator !== "") {
+        screen.textContent = "Enter a valid number";
+        setErrorClass(true);
+        cleanAfterCalculate();
+      }
+    }
+  }
+
+  if (e.key === "Delete") {
+    removeLastElement();
+  }
+
+  if (e.key === "Backspace") {
+    reset();
+    updateScreen();
   }
 });
